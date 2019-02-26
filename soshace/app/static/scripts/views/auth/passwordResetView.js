@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * Р’РёРґ СЃС‚СЂР°РЅРёС†С‹ Р»РѕРіРёРЅР°
+ * Password reset page view
  *
- * @module LoginView
+ * @module PasswordResetView
  */
 
 define([
@@ -22,111 +22,134 @@ define([
     return Backbone.Layout.extend({
 
         /**
-         * РњРѕРґРµР»СЊ С„РѕСЂРјС‹ Р»РѕРіРёРЅР°
+         * Page reset model
          *
          * @field
-         * @name LoginView#model
+         * @name PasswordResetView#model
          * @type {Backbone.Model | null}
          */
         model: null,
 
         /**
-         * РЎСЃС‹Р»РєРё РЅР° DOM СЌР»РµРјРµРЅС‚С‹ РІРёРґР°
+         * Ссылки на DOM элементы вида
          *
          * @field
-         * @name LoginView#elements
+         * @name PasswordResetView#elements
          * @type {Object}
          */
         elements: {
             validateFields: null,
             authMessages: null,
-            loginForm: null
+            passwordResetForm: null
         },
 
         /**
          * @field
-         * @name LoginView#events
+         * @name PasswordResetView#events
          * @type {Object}
          */
         events: {
             'focus .js-validate-input': 'validateFieldFocusHandler',
-            'submit .js-login-form': 'userLoginHandler'
+            'submit .js-password-reset-form': 'resetPasswordHandler'
         },
 
         /**
-         * РџСѓС‚СЊ РґРѕ С€Р°Р±Р»РѕРЅР°
+         * Путь до шаблона
          *
          * @field
-         * @name LoginView#template
+         * @name PasswordResetView#template
          * @type {string}
          */
-        template: Soshace.hbs['auth/auth'],
+        template: Soshace.hbs['auth/remindPasswordSuccess'],
 
         /**
          * @constructor
-         * @name LoginView#initialize
+         * @name PasswordResetView#initialize
          * @returns {undefined}
          */
         initialize: function () {
             _.bindAll(this,
-                'userLoginSuccess',
-                'userLoginFail'
-            );
-
-            Handlebars.registerPartial(
-                'auth/login',
-                Soshace.hbs['partials/auth/login']
+                'resetPasswordSuccess',
+                'resetPasswordFail'
             );
 
             Backbone.Validation.bind(this);
         },
 
+
         /**
-         * Login submit handler
+         * Sets form data to model and validates it using cached results and model validation
+         *
+         * @name PasswordResetView#setFieldDataAndGetInputErrors
+         * @method
+         * @param formData
+         * @returns {Object || null}
+         */
+        getValidationError: function(formData) {
+            var validationError = Helpers.getValidationError(formData, this.model),
+                passwordsMatch;
+
+            if (validationError !== null) {
+                return validationError;
+            }
+
+            passwordsMatch = formData.password === formData.confirmPassword;
+
+            if (!passwordsMatch) {
+                return {
+                    confirmPassword: 'Passwords must match'
+                };
+            }
+
+            return null;
+        },
+
+        /**
+         * Submits password reset form
          *
          * @method
-         * @name LoginView#userLoginHandler
+         * @name PasswordResetView#resetPasswordHandler
          * @param {jQuery.Event} event
          * @returns {undefined}
          */
-        userLoginHandler: function (event) {
+        resetPasswordHandler: function (event) {
             var errors,
                 _this = this,
-                formData;
+                formData = Helpers.serializeForm(this.elements.passwordResetForm);
 
             event.preventDefault();
 
-            formData = Helpers.serializeForm(this.elements.loginForm);
-            this.model.set(formData);
+            errors = this.getValidationError(formData);
 
-            errors = Helpers.getValidationError(formData, this.model);
-            if (errors) {
+            if (errors !== null) {
                 Helpers.showFieldsErrors(errors, true);
                 return;
             }
 
-            this.model.login(formData, {
-                success: _this.userLoginSuccess.bind(this),
-                error: _this.userLoginFail.bind(this)
+            this.model.resetPassword({
+                password: formData.password,
+                token: formData.token,
+                email: formData.email
+            }, {
+                success: _this.resetPasswordSuccess,
+                error: _this.resetPasswordFail
             });
         },
 
         /**
-         * РњРµС‚РѕРґ РѕР±СЂР°Р±РѕС‚С‡РёРє СѓСЃРїРµС€РЅРѕР№ РІС…РѕРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+         * Method redirects user after successful password change
          *
          * @method
          * @name LoginView#userLoginSuccess
-         * @param {Backbone.Model} user
-         * @param {Object} response РІ РѕС‚РІРµС‚Рµ РїСЂРёС…РѕРґРёС‚ РїСЂРѕС„РёР»СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+         * @param {Backbone.Model} model
+         * @param {Object} response в ответе приходит профиль пользователя
          * @returns {undefined}
          */
-        userLoginSuccess: function (user) {
+        resetPasswordSuccess: function (model, response) {
             var app = Soshace.app,
-                userName = user.userName,
-                locale = user.locale,
-                redirectUrl = '/' + locale + '/users/' + userName;
+                redirectUrl;
 
-            Soshace.profile = user;
+            redirectUrl = '/' + Helpers.getLocale();
             app.getView('.js-system-messages').collection.fetch().
                 done(function () {
                     Backbone.history.navigate(redirectUrl, {trigger: true});
@@ -134,7 +157,7 @@ define([
         },
 
         /**
-         * РњРµС‚РѕРґ РѕР±СЂР°Р±РѕС‚С‡РёРє РЅРµСѓСЃРїРµС€РЅРѕРіРѕ Р»РѕРіРёРЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ
+         * Method handler of submit fail
          *
          * @method
          * @name LoginView#userLoginFail
@@ -142,17 +165,15 @@ define([
          * @param {Object} response
          * @returns {undefined}
          */
-        userLoginFail: function (error) {
-            error = Helpers.parseResponseError(error);
-
-            if (typeof error === 'string') {
-                this.showAuthErrorMessage(error);
-                return;
-            }
+        resetPasswordFail: function (response) {
+            var error = Helpers.parseResponseError(response);
 
             if (typeof error === 'object') {
                 Helpers.showFieldsErrors(error, true);
+                return;
             }
+
+            console.error(response && response.responseText, error);
         },
 
         /**
@@ -187,7 +208,7 @@ define([
         },
 
         /**
-         * РњРµС‚РѕРґ СЃРѕС…СЂР°РЅСЏРµС‚ СЃСЃС‹Р»РєРё РЅР° СЌР»РµРјРµРЅС‚С‹ DOM
+         * Метод сохраняет ссылки на элементы DOM
          *
          * @method
          * @name LoginView#setElements
@@ -195,12 +216,12 @@ define([
          */
         setElements: function () {
             this.elements.validateFields = this.$('.js-validate-input');
-            this.elements.authMessages = this.$('.js-auth-messages');
-            this.elements.loginForm = this.$('.js-login-form');
+            //this.elements.authMessages = this.$('.js-auth-messages');
+            this.elements.passwordResetForm = this.$('.js-password-reset-form');
         },
 
         /**
-         * РњРµС‚РѕРґ РѕР±СЂР°Р±РѕС‚С‡РёРє РїРѕР»СѓС‡РµРЅРёСЏ С„РѕРєСѓСЃР° РїРѕР»РµРј РІР°Р»РёРґР°С†РёРё
+         * Метод обработчик получения фокуса полем валидации
          *
          * @method
          * @name LoginView#validateFieldFocusHandler
@@ -221,7 +242,7 @@ define([
         afterRender: function () {
             this.setElements();
             this.elements.validateFields.controlStatus();
-            $('#email').focus();
+            $('#password').focus();
         }
     });
 });

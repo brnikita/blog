@@ -57,6 +57,9 @@ var Blog = Class.extend({
      */
     configure: function () {
         App.use(bodyParser.json());
+        App.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+            extended: true
+        }));
         App.use(cookieParser());
         App.use(methodOverride());
         App.enable('view cache');
@@ -82,11 +85,13 @@ var Blog = Class.extend({
             resave: true,
             store: new MongoStore({
                 db: 'soshace'
+            }, function() {
+                App.use(Passport.initialize());
+                App.use(Passport.session());
             })
         }));
-        App.use(Passport.initialize());
-        App.use(Passport.session());
-		App.use("/static", express.static(process.cwd() + '/dist'));
+
+        App.use("/static", express.static(process.cwd() + '/dist'));
     }
 });
 

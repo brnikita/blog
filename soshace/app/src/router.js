@@ -58,11 +58,13 @@ module.exports = Class.extend({
         'delete /api/users/:username': 'usersController removeProfile',
         'post /api/login': 'auth/loginController loginHandler',
         'get /api/logout': 'auth/loginController logoutHandler',
-        'post /api/registration/validate': 'auth/remindPasswordController validateField',
+        'post /api/registration/validate': 'auth/registrationController validateField',
         'post /api/remind_password': 'auth/remindPasswordController remindPasswordHandler',
         'get /api/system_messages': 'systemMessagesController getMessages',
         'delete /api/system_messages/:_id': 'systemMessagesController removeMessage',
         'patch /api/system_messages/:_id': 'systemMessagesController updateMessage',
+        'post /api/reset-password': 'auth/remindPasswordController changePassword',
+        'post /api/update-password': 'auth/remindPasswordController updatePassword',
         //-------------------API end--------------------
 
         'get /': 'posts/postsController redirectToPosts',
@@ -74,6 +76,7 @@ module.exports = Class.extend({
         'get /:locale/registration': 'auth/registrationController renderRegistration',
         'get /:locale/login': 'auth/loginController renderLogin',
         'get /:locale/remind_password': 'auth/remindPasswordController renderRemindPasswordPage',
+        'get /:locale/reset-password': 'auth/remindPasswordController resetPassword',
         'get /:locale/users/:username': 'usersController renderUserPage',
         'get /:locale/users/:username/edit': 'usersController renderUserEditPage',
         'get /:locale/users/:username/settings': 'usersController renderUserSettingsPage',

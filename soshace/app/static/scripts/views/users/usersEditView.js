@@ -47,7 +47,8 @@ define([
          * @type {Object}
          */
         events: {
-            'submit': 'submitHandler'
+            'submit': 'submitHandler',
+            'click .js-save-messages .close': 'closeSaveMessage'
         },
 
         /**
@@ -134,23 +135,7 @@ define([
         },
 
         /**
-         * Метод возвращает сериализованную форму
-         *
-         * @method
-         * @name UsersEditView#getFormData
-         * @returns {Object}
-         */
-        getFormData: function () {
-            var $form = this.elements.form,
-                serializedForm = $form.serializeArray();
-
-            return _.object(_.map(serializedForm, function (field) {
-                return [field.name, field.value];
-            }));
-        },
-
-        /**
-         * Метод обработчик отправки формы
+         * Form submit handler
          *
          * @method
          * @name UsersEditView#submitHandler
@@ -158,10 +143,12 @@ define([
          * @returns {undefined}
          */
         submitHandler: function (event) {
-            var formData = this.getFormData(),
+            var formData = Helpers.getFormData(this.elements.form),
                 diff;
 
             event.preventDefault();
+
+            formData.birthday = this.elements.birthday.calendar('getOptions').selectedDate;
             this.model.set(formData);
             diff = this.model.changed;
 
@@ -289,6 +276,18 @@ define([
         },
 
         /**
+         * Method closes system messages on click on close button
+         *
+         * @method
+         * @name UsersEditView#closeSaveMessage
+         * @param e
+         * @returns {undefined}
+         */
+        closeSaveMessage: function(e) {
+            $(e.currentTarget).parent().remove();
+        },
+
+        /**
          * @method
          * @name UsersEditView#serialize
          * @returns {Object}
@@ -325,14 +324,16 @@ define([
         },
 
         /**
-         * Метод применяет плагин календаря к полям
+         * Method initializes calendar plugin
          *
          * @method
          * @name UsersEditView#setDatesControls
          * @returns {undefined}
          */
         setDatesControls: function () {
-            this.elements.birthday.calendar();
+            this.elements.birthday.calendar({
+                selectedDate: this.model.get('birthday')
+            });
         },
 
         /**

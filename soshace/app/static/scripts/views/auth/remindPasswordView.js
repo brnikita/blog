@@ -70,7 +70,7 @@ define([
         },
 
         /**
-         * Метод обработчик клика на кнопке 'Восстановить пароль'
+         * Form submit handler
          *
          * @method
          * @name RemindPasswordView#submitHandler
@@ -80,28 +80,29 @@ define([
         submitHandler: function (event) {
             var errors,
                 $email = this.elements.emailField,
-                emailValue = $.trim($email.val()),
-                _this = this;
+                emailValue = $.trim($email.val()).toLowerCase();
 
             event.preventDefault();
 
             emailValue = emailValue.toLowerCase();
-            this.model.set('email', emailValue);
-            errors = this.model.validate();
 
-            if (errors) {
-                this.showFieldsErrors(errors, true);
+            errors = Helpers.getValidationError({
+                email: emailValue
+            }, this.model);
+
+            if (!_.isEmpty(errors)) {
+                Helpers.showFieldsErrors(errors, true);
                 return;
             }
 
-            this.model.save(null, {
-                success: _this.submitSuccessHandler,
-                error: _this.submitFailHandler
+            this.model.remindPassword(emailValue, {
+                success: this.submitSuccessHandler,
+                error: this.submitFailHandler
             });
         },
 
         /**
-         * Метод обработчик успешной отправки интсрукции на почтовый ящик
+         * Submit success handler
          *
          * @method
          * @name RemindPasswordView#submitSuccessHandler
@@ -110,18 +111,11 @@ define([
          * @returns {undefined}
          */
         submitSuccessHandler: function (model, response) {
-            var app = Soshace.app,
-                redirectUrl = response.redirect;
-
-            Soshace.profile = response.profile;
-            app.getView('.js-system-messages').collection.fetch().
-                done(function () {
-                    Backbone.history.navigate(redirectUrl, {trigger: true});
-                });
+            alert(Helpers.i18n('Check your email to change password'));
         },
 
         /**
-         * Метод обработчик неуспешной отправки интрукции на почтовый ящик
+         * Submit error handler
          *
          * @method
          * @name RemindPasswordView#submitFailHandler
@@ -130,39 +124,19 @@ define([
          * @returns {undefined}
          */
         submitFailHandler: function (model, response) {
-            var error = response.responseJSON && response.responseJSON.error;
+            var error = Helpers.parseResponseError(response);
 
-            if (typeof error === 'string') {
-                //TODO: добавить вывод системной ошибки
+            if (error === null) {
+                console.error('remind password error');
                 return;
             }
 
-            if (typeof error === 'object') {
-                this.showFieldsErrors(error);
+            if (typeof error === 'string') {
+                console.error(error);
+                return;
             }
-        },
 
-        /**
-         * Метод показывает список ошибок у
-         * переданных полей
-         *
-         * @method
-         * @name RemindPasswordView#showFieldsErrors
-         * @param {Object} errors список ошибок
-         * @param {Boolean} [translate] true - перевести ошибки
-         * @returns {undefined}
-         */
-        showFieldsErrors: function (errors, translate) {
-            _.each(errors, _.bind(function (error, fieldName) {
-                var $field;
-
-                fieldName = Helpers.hyphen(fieldName);
-                $field = $('#' + fieldName);
-                if (translate) {
-                    error = Helpers.i18n(error);
-                }
-                $field.controlStatus('error', error);
-            }, this));
+            Helpers.showFieldsErrors(error, false);
         },
 
         /**

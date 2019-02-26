@@ -42,6 +42,12 @@ module.exports = Controller.extend({
                 this.sendError(error);
                 return;
             }
+
+            if (!user) {
+                this.sendError('user not fould', 404);
+                return;
+            }
+
             user = user.getPublicFields();
             response.send(user);
         }, this));
@@ -98,7 +104,7 @@ module.exports = Controller.extend({
             requestParams = new RequestParams(request),
             profile = requestParams.profile;
 
-        if (!request.isAuthenticated()) {
+        if (!requestParams.isAuthenticated) {
             return true;
         }
 

@@ -146,7 +146,9 @@ define(function () {
                 },
                 registration: {
                     validateField: '/api/registration/validate'
-                }
+                },
+                resetPassword: '/api/reset-password',
+                updatePassword: '/api/update-password'
             }
         },
 

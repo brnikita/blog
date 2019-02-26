@@ -121,7 +121,7 @@ var _ = require('underscore'),
             //поле доступно для отправки на клиент
             //Используется timestamp
             public: true,
-            type: String,
+            type: Date,
             default: null
         },
         password: {
@@ -204,6 +204,18 @@ function checkFieldType(field, value) {
 
     return true;
 }
+
+/**
+ * The method checks whether an email exists
+ *
+ * @method
+ * @name UsersShema.validateEmail
+ * @param {String} email проверяемый email
+ * @return {String | undefined} ошибка
+ */
+UsersShema.methods.emailExists = function (email) {
+    console.log(email === this.email);
+};
 
 /**
  * Метод возвращает список полов с выбранным в модели полом
@@ -537,11 +549,7 @@ UsersShema.statics.validatePassword = function (password) {
 };
 
 /**
- * mongo не дает одновременно сделать $push и $pull
- * http://stackoverflow.com/questions/4584665/field-name-duplication-not-allowed-with-modifiers-on-update
- *
- * Метод ставит email пользователя в статус утверждена
- * и добавляет сообщение об успехе
+ * Method sets emailConfirm flag to true
  *
  * @method
  * @name UsersShema.confirmEmail
@@ -550,11 +558,73 @@ UsersShema.statics.validatePassword = function (password) {
  * @return {undefined}
  */
 UsersShema.statics.confirmEmail = function (code, callback) {
-    this.collection.findAndModify({code: code}, [], {
-        $set: {
-            emailConfirmed: true
+    var self = this;
+    this.collection.findOne({code: code}, function(error, user) {
+        if (error) {
+            console.error(error);
+            callback(error);
+            return;
         }
-    }, {new: true}, callback);
+
+        if (!user) {
+            callback('User not found');
+            return;
+        }
+
+        if (user.emailConfirmed) {
+            callback('Email is already confirmed');
+            return;
+        }
+
+        self.collection.update({code: code}, {$set: {emailConfirmed: true}}, function(error) {
+            if (error) {
+                callback('Server is too busy, try later');
+                return;
+            }
+
+            callback(null, user);
+        });
+    });
+};
+
+/**
+ * Updates password
+ *
+ * @method
+ * @name UsersShema.updatePassword
+ * @param {String} userId
+ * @param {String} password
+ * @param {Function} callback
+ * @return {undefined}
+ */
+
+UsersShema.statics.findOneAndUpdatePassword = function (userId, password, callback) {
+    var self = this,
+        serverIsBusyError = {
+            error: 'Server is too busy, try later',
+            code: 503
+        },
+        useCallback = typeof callback === 'function';
+
+    Bcrypt.genSalt(SALT_WORK_FACTOR, function (error, salt) {
+        if (error) {
+            console.error(error);
+            useCallback && callback(serverIsBusyError);
+            return;
+        }
+
+        Bcrypt.hash(password, salt, function (error, hash) {
+            if (error) {
+                console.error(error);
+                useCallback && callback(serverIsBusyError);
+                return;
+            }
+            self.update({_id: userId}, {password: hash}, function (error, user) {
+                useCallback && callback(null, user);
+            });
+        });
+    });
+
 };
 
 module.exports = Mongoose.model('users', UsersShema);

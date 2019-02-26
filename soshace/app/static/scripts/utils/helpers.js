@@ -15,7 +15,7 @@ define([
 ], function ($, _) {
     return {
         /**
-         * Метод приводит строки типа hyp-hen к виду camelCase
+         * hyp-hen string to camelCase
          *
          * @public
          * @method
@@ -28,7 +28,7 @@ define([
         },
 
         /**
-         * Метод приводит строки типа camelCase к виду hyp-hen
+         * camelCase string to hyp-hen
          *
          * @public
          * @method
@@ -59,6 +59,82 @@ define([
             });
 
             return serializedForm;
+        },
+
+        /**
+         * Method parses error from server response
+         *
+         * @method
+         * @name Helpers#parseResponseError
+         * @param {Object} response
+         * @returns {Object | null}
+         */
+        parseResponseError: function (response) {
+            var error,
+                responseJSONError;
+
+            if (!response) {
+                return null;
+            }
+
+            responseJSONError = response.responseJSON && response.responseJSON.error;
+            if (responseJSONError) {
+                return responseJSONError;
+            }
+
+            try {
+                error = JSON.parse(response.responseText);
+                if (error.error) {
+                    error = error.error;
+                }
+            }  catch(e) {
+                error = null;
+            }
+
+            return error;
+        },
+
+        /**
+         * Method shows errors list in specified fields
+         *
+         * @method
+         * @name Helpers#showFieldsErrors
+         * @param {Object} errors list of errors
+         * @param {boolean} translate
+         * @returns {undefined}
+         */
+        showFieldsErrors: function (errors, translate) {
+            _.each(errors, _.bind(function (error, fieldName) {
+                var $field;
+
+                fieldName = this.hyphen(fieldName);
+                $field = $('#' + fieldName);
+                if (translate) {
+                    error = this.i18n(error);
+                }
+                $field.controlStatus('error', error);
+            }, this));
+        },
+
+        /**
+         * Gets validation error for formData
+         *
+         * @method
+         * @name Helpers#getValidationError
+         * @param formData
+         * @param model
+         * @returns {Object || null}
+         */
+        getValidationError: function(formData, model) {
+            var validationError = _.reduce(formData, function(errors, fieldValue, fieldName) {
+                var fieldError = model.preValidate(fieldName, fieldValue);
+                if (!_.isEmpty(fieldError)) {
+                    errors[fieldName] = fieldError;
+                }
+                return errors;
+            }, {}, this);
+
+            return _.isEmpty(validationError)? null: validationError;
         },
 
         /**
@@ -124,6 +200,20 @@ define([
             }
 
             return this._i18nSetParams(translations[value], params);
+        },
+
+        /**
+         * Method returns serialized form
+         *
+         * @method
+         * @name Helpers#getFormData
+         * @returns {Object}
+         */
+        getFormData: function ($form) {
+            var serializedForm = $form.serializeArray();
+            return _.object(_.map(serializedForm, function (field) {
+                return [field.name, field.value];
+            }));
         },
 
         /**

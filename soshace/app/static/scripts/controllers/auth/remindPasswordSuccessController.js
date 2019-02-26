@@ -1,61 +1,61 @@
 'use strict';
 
 /**
- * РљРѕРЅС‚СЂРѕР»Р»РµСЂ СЃС‚СЂР°РЅРёС†С‹ СЂРµРіРёСЃС‚СЂР°С†РёРё
+ * Контроллер страницы восстановления пароля
  *
- * @class RegistrationController
+ * @class RemindPasswordController
  */
 define([
-    'backbone',
-    'utils/controller',
-    'models/usersModel',
-    'views/auth/registrationView',
-    'utils/helpers',
-    'config'
-],
-    function (Backbone, Controller, UsersModel, RegistrationView, Helpers) {
+        'backbone',
+        'utils/controller',
+        'models/usersModel',
+        'views/auth/passwordResetView',
+        'utils/helpers',
+        'config'
+    ],
+    function (Backbone, Controller, UsersModel, PasswordResetView, Helpers) {
         return Controller.extend({
             /**
-             * РђР»РёР°СЃ СЃС‚СЂР°РЅРёС†С‹
+             * Алиас страницы
              *
              * @field
-             * @name RegistrationController#pageAlias
+             * @name RemindPasswordController#pageAlias
              * @type {String}
              */
-            pageAlias: 'registration',
+            pageAlias: 'remind_password_success',
 
             /**
              * @field
-             * @name RegistrationController#model
-             * @type {UsersModel}
+             * @name RemindPasswordController#model
+             * @type {UsersModel | null}
              */
             model: null,
 
             /**
              * @field
-             * @name RegistrationController#view
-             * @type {RegistrationView}
+             * @name RemindPasswordController#view
+             * @type {RemindPasswordView | null}
              */
             view: null,
 
             /**
              * @constructor
-             * @name RegistrationController#initialize
+             * @name RemindPasswordController#initialize
              * @returns {undefined}
              */
             initialize: function () {
                 this.model = new UsersModel();
-                this.view = new RegistrationView({
+                this.view = new PasswordResetView({
                     model: this.model
                 });
             },
 
 
             /**
-             * РњРµС‚РѕРґ РІС‹Р·С‹РІР°РµС‚ РїСЂРё СЂРµРЅРґРµСЂРµ РЅР° СЃРµСЂРІРµСЂРµ
+             * Метод вызывает при рендере на сервере
              *
              * @method
-             * @name RegistrationController#firstLoad
+             * @name RemindPasswordController#firstLoad
              * @returns {undefined}
              */
             firstLoad: function () {
@@ -68,10 +68,10 @@ define([
             },
 
             /**
-             * РњРµС‚РѕРґ РІС‹Р·С‹РІР°РµС‚ РїСЂРё СЂРµРЅРґРµСЂРµ РЅР° РєР»РёРµРЅС‚Рµ
+             * Метод вызывает при рендере на клиенте
              *
              * @method
-             * @name RegistrationController#firstLoad
+             * @name RemindPasswordController#firstLoad
              * @returns {undefined}
              */
             secondLoad: function () {

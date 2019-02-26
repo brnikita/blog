@@ -8,11 +8,11 @@
 define([
     'backbone',
     'utils/controller',
-    'models/auth/loginModel',
+    'models/usersModel',
     'views/auth/loginView',
     'utils/helpers'
 ],
-    function (Backbone, Controller, LoginModel, LoginView, Helpers) {
+    function (Backbone, Controller, UsersModel, LoginView, Helpers) {
         return Controller.extend({
             /**
              * Алиас страницы
@@ -26,7 +26,7 @@ define([
             /**
              * @field
              * @name LoginController#model
-             * @type {LoginModel}
+             * @type {UsersModel}
              */
             model: null,
 
@@ -43,7 +43,7 @@ define([
              * @returns {undefined}
              */
             initialize: function () {
-                this.model = new LoginModel();
+                this.model = new UsersModel();
                 this.view = new LoginView({
                     model: this.model
                 });

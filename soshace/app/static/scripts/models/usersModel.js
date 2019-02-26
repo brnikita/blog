@@ -44,10 +44,9 @@ define([
             lastName: null,
             profileImg: null,
             sex: null,
-            birthdayDate: null,
-            birthdayMonth: null,
-            birthdayFullYear: null,
-            aboutAuthor: null
+            aboutAuthor: null,
+            email: null,
+            password: null
         },
 
         /**
@@ -87,8 +86,92 @@ define([
             }
         ],
 
+        registrationFormText: {
+            helpers: {
+                userName: 'Use the Latin alphabet, numbers, &#34;.&#34;, &#34;_&#34;, &#34;-&#34;.',
+                email: 'Please enter your e-mail address.',
+                password: 'Use the numbers, upper-and lowercase letters, symbols'
+            },
+            successMessages: {
+                userName: 'Great username!',
+                email: 'Great email!',
+                password: 'Great password!'
+            }
+        },
+
+        validation: {
+            email: [
+                {
+                    required: true,
+                    msg: 'Email can&#39;t be blank.'
+                },
+                {
+                    pattern: Soshace.patterns.email,
+                    msg: 'Email is invalid.'
+                }
+            ],
+            password: [
+                {
+                    required: true,
+                    msg: 'Password can&#39;t be blank.'
+                },
+                {
+                    minLength: 6,
+                    msg: 'Password length should&#39;t be less than 6 characters.'
+                }
+            ],
+            userName: [
+                {
+                    required: true,
+                    msg: 'Username can&#39;t be blank.'
+                },
+                {
+                    userName: 1
+                }
+            ]
+        },
+
         /**
-         * Метод возвращает true, если информация по прфилю пустая
+         * Gets fields needed for registration from model to reduce traffic
+         * server don't need whole model
+         *
+         * @method
+         * @name UsersModel#getRegistrationData
+         * @returns {Object}
+         */
+        getRegistrationData: function() {
+            return {
+                locale: this.get('locale'),
+                email: this.get('email'),
+                password: this.get('password'),
+                userName: this.get('userName')
+            };
+        },
+
+        /**
+         * Sends request to register user
+         *
+         * @method
+         * @name UsersModel#register
+         * @param callbacks
+         * @returns {undefined}
+         */
+        register: function(callbacks) {
+            $.ajax({
+                type: "POST",
+                url: Soshace.urls.api.createUser,
+                dataType: 'json',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(this.getRegistrationData()),
+                success: callbacks.success,
+                error: callbacks.error
+            });
+        },
+
+        /**
+         * Method returns true if profile is empty
          *
          * @method
          * @name UsersModel#isProfileInfoEmpty
@@ -110,7 +193,7 @@ define([
         },
 
         /**
-         * Метод загружает данные пользователя
+         * Method loads user's data
          *
          * @method
          * @name UsersModel#getUser
@@ -135,6 +218,29 @@ define([
         },
 
         /**
+         * Sends request to login user
+         *
+         * @method
+         * @name UsersModel#login
+         * @param loginData
+         * @param callbacks
+         * @returns {undefined}
+         */
+        login: function(loginData, callbacks) {
+            $.ajax({
+                type: "POST",
+                url: Soshace.urls.api.login,
+                dataType: 'json',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(loginData),
+                success: callbacks.success,
+                error: callbacks.error
+            });
+        },
+
+        /**
          * Метод возвращает список полов с выбранным в модели полом
          *
          * @method
@@ -154,6 +260,97 @@ define([
             });
 
             return this.sexList;
+        },
+
+        /**
+         * Makes request to server to update password and passes response to callback
+         *
+         * @method
+         * @param {String} oldPassword
+         * @param {String} password
+         * @param {Function} callbacks
+         * @returns {undefined}
+         */
+        updatePassword: function (oldPassword, password, callbacks) {
+            $.ajax({
+                type: "POST",
+                url: Soshace.urls.api.updatePassword,
+                dataType: 'json',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({
+                    password: password,
+                    oldPassword: oldPassword
+                }),
+                success: callbacks.success,
+                error: callbacks.error
+            });
+        },
+
+        /**
+         * Sends request to server to reset password
+         *
+         * @method
+         * @name UsersModel#resetPassword
+         * @param resetPasswordData
+         * @param callbacks
+         * @returns {undefined}
+         */
+        resetPassword: function(resetPasswordData, callbacks) {
+            $.ajax({
+                type: "POST",
+                url: Soshace.urls.api.resetPassword,
+                dataType: 'json',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(resetPasswordData),
+                success: callbacks.success,
+                error: callbacks.error
+            });
+        },
+
+        /**
+         * Method sends request to validate field by server
+         *
+         * @method
+         * @name UsersModel#validation
+         * @param {Object} serializedField
+         * @returns {jQuery.Deferred}
+         */
+        validateFieldByServer: function (serializedField) {
+            var params = {},
+                name = serializedField.name;
+
+            params[name] = serializedField.value;
+            // use post for security
+            return $.post(Soshace.urls.api.registration.validateField, params);
+        },
+
+        /**
+         * Sends request to remind password
+         *
+         * @method
+         * @name Usersmodel@remindPassword
+         * @param emailValue
+         * @param callbacks
+         * @returns {undefined}
+         */
+        remindPassword: function(emailValue, callbacks) {
+            $.ajax({
+                type: "POST",
+                url: Soshace.urls.api.remindPassword.send,
+                dataType: 'json',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify({
+                    email: emailValue
+                }),
+                success: callbacks.success,
+                error: callbacks.error
+            });
         },
 
         /**

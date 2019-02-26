@@ -108,14 +108,10 @@ module.exports = Controller.extend({
         var request = this.request,
             confirmCode = request.query.code;
 
-        //TODO: добавить проверку, что пользователь уже подтвердил email
-        //TODO: добавить обработку ошибок и исключений
         UsersModel.confirmEmail(confirmCode, this.confirmEmailHandler);
     },
 
     /**
-     * TODO: добавить обработку ошибок
-     * TODO: здесь вылетает бага, если код подтверждения отправлен неверный
      *
      * Метод обработчик положительного
      * подтверждения кода пользователя
@@ -128,7 +124,7 @@ module.exports = Controller.extend({
      */
     confirmEmailHandler: function (error, user) {
         if (error) {
-            this.renderError('Server is too busy, try later', 503);
+            this.renderError(error, 503);
             return;
         }
         this.updateUserMessagesAfterConfirmEmail(user, this.loginUser);
@@ -164,7 +160,7 @@ module.exports = Controller.extend({
     },
 
     /**
-     * Метод создает пользователя в базе
+     * Method creates user in db
      *
      * @method
      * @name RegistrationController#createUser
@@ -175,7 +171,7 @@ module.exports = Controller.extend({
             userData = request.body,
             user;
 
-        if (!userData) {
+        if (_.isEmpty(userData)) {
             this.sendError('Bad request');
             return;
         }
@@ -185,7 +181,25 @@ module.exports = Controller.extend({
     },
 
     /**
-     * Метод обработчик сохранения пользователя в модели
+     * Method formats error from db for client if saving fails
+     *
+     * @method
+     * @name RegistrationController#formatErrorsFromDB
+     * @param errors
+     * @returns {Object}
+     */
+    formatErrorsFromDB: function(errors) {
+        if (errors === null) {
+            errors = {};
+        }
+        return _.reduce(errors, function(formattedErrors, error, fieldName) {
+            formattedErrors[fieldName] = error && error.message;
+            return formattedErrors;
+        }, {});
+    },
+
+    /**
+     * User save success handler
      *
      * @method
      * @name RegistrationController#userSaveHandler
@@ -196,7 +210,9 @@ module.exports = Controller.extend({
     userSaveHandler: function (error, user) {
         if (error) {
             if (error.errors) {
-                this.sendError(error.errors);
+                this.sendError({
+                    error: this.formatErrorsFromDB(error.errors)
+                });
                 return;
             }
 
